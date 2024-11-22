@@ -15,6 +15,7 @@ let incomingBuffer = Buffer.alloc(0);
 // Array to store the history of recent packets
 const history = [];
 const MAX_HISTORY_SIZE = 100; // Limit the history size to 100 packets
+var isDoorOpen = false;
 
 serialPort.on('data', (data) => {
 	// Append new data to buffer
@@ -72,12 +73,11 @@ serialPort.on('data', (data) => {
 		history.push(parsedData);
 		
 		if(parsedData.start_angle > 40 && parsedData.start_angle < 60){
-		
 			if(parsedData.points[0].distance < 100){
-				console.log("Door Closed")
+				isDoorOpen = false
 			}
 			else{
-				console.log("Door Open")
+				isDoorOpen = true
 			}
 		}
 
@@ -95,6 +95,9 @@ serialPort.on('data', (data) => {
 app.get('/api/lidar-data', (req, res) => {
 	res.json(history);
 });
+app.get('/api/door-status', (req, res) => {
+	res.json(isDoorOpen);
+})
 
 // Start the server
 app.listen(port, () => {
