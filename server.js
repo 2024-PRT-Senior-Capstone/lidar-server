@@ -7,7 +7,7 @@ const port = 3001;
 app.use(cors());
 
 // Serial connection to the LD20 LIDAR on COM3
-const serialPort = new SerialPort({ path: 'COM3', baudRate: 230400 });
+const serialPort = new SerialPort({ path: 'COM5', baudRate: 230400 });
 
 // Buffer to accumulate incoming data
 let incomingBuffer = Buffer.alloc(0);
@@ -70,6 +70,16 @@ serialPort.on('data', (data) => {
 
 		// Add parsed packet data to history
 		history.push(parsedData);
+		
+		if(parsedData.start_angle > 40 && parsedData.start_angle < 60){
+		
+			if(parsedData.points[0].distance < 100){
+				console.log("Door Closed")
+			}
+			else{
+				console.log("Door Open")
+			}
+		}
 
 		// Ensure history doesn't exceed the maximum size
 		if (history.length > MAX_HISTORY_SIZE) {
@@ -90,3 +100,4 @@ app.get('/api/lidar-data', (req, res) => {
 app.listen(port, () => {
 	console.log(`Listening at http://localhost:${port}`);
 });
+
