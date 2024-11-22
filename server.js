@@ -15,6 +15,12 @@ let incomingBuffer = Buffer.alloc(0);
 // Array to store the history of recent packets
 const history = [];
 const MAX_HISTORY_SIZE = 100; // Limit the history size to 100 packets
+
+//The vars below need to be adjusted based on door angle/distance
+const MIN_LIDAR_ANGLE = 40; 
+const MAX_LIDAR_ANGLE = 60;
+const FLOOR_DISTANCE = 100;
+
 var isDoorOpen = false;
 
 serialPort.on('data', (data) => {
@@ -72,8 +78,10 @@ serialPort.on('data', (data) => {
 		// Add parsed packet data to history
 		history.push(parsedData);
 		
-		if(parsedData.start_angle > 40 && parsedData.start_angle < 60){
-			if(parsedData.points[0].distance < 100){
+		//If the start angle is between 40 and 60 degrees and the distance is smaller than 100cm, the door is closed.
+
+		if(parsedData.start_angle > MIN_LIDAR_ANGLE && parsedData.start_angle < MAX_LIDAR_ANGLE){
+			if(parsedData.points[0].distance < FLOOR_DISTANCE){
 				isDoorOpen = false
 			}
 			else{
