@@ -90,6 +90,7 @@ serialPort.on('data', (data) => {
 		
 		if(parsedData.start_angle >= MIN_LIDAR_ANGLE && parsedData.start_angle <= MAX_LIDAR_ANGLE && parsedData.end_angle >= MIN_LIDAR_ANGLE && parsedData.end_angle <= MAX_LIDAR_ANGLE){
 
+			//Debug statements
 			console.log("distance: " + parsedData.points[6].distance)
 			console.log("saw floor: " + sawFloor)
 			console.log(" ")
@@ -129,8 +130,14 @@ serialPort.on('data', (data) => {
 
 				//If all points report the floor set saw floor to true
 				sawFloorCount++;
+
+				//After 5 potential full floor reports we can be sure we have seen the floor. 
 				if(sawFloorCount > 5){
+
+					//Set saw floor bool to true
 					sawFloor = true;
+
+					//Reset saw floor count
 					sawFloorCount = 0;
 				}
 				
@@ -154,9 +161,13 @@ serialPort.on('data', (data) => {
 app.get('/api/lidar-data', (req, res) => {
 	res.json(history);
 });
+
+//Endpoint to serve door status
 app.get('/api/door-status', (req, res) => {
 	res.json(isDoorOpen);
 })
+
+//Endpoint to serve occupancy
 app.get('/api/occupancy', (req, res) => {
 	res.json(occupancy);
 })
