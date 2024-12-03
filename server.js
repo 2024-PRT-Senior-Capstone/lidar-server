@@ -17,15 +17,21 @@ const history = [];
 const MAX_HISTORY_SIZE = 100; // Limit the history size to 100 packets
 
 //The vars below need to be adjusted based on door angle/distance
-const MIN_LIDAR_ANGLE = 40; 
-const MAX_LIDAR_ANGLE = 60;
-const FLOOR_DISTANCE = 100;
-const DOOR_DISTANCE = 50;
+const MIN_LIDAR_ANGLE = 170; 
+const MAX_LIDAR_ANGLE = 201;
+const FLOOR_DISTANCE = 600;
+const DOOR_DISTANCE = 250;
 const TOLERANCE = 5;
+
 
 var isDoorOpen = false;
 var sawSomething = false;
 var occupancy = 0;
+var closedCount = 0;
+var sawFloor = false;
+var lastPersonAngle = 0;
+var sawFloorCount = 0;
+
 
 serialPort.on('data', (data) => {
 	// Append new data to buffer
@@ -82,34 +88,56 @@ serialPort.on('data', (data) => {
 		// Add parsed packet data to history
 		history.push(parsedData);
 		
-		//If the start angle is between 40 and 60 degrees
-		if(parsedData.start_angle > MIN_LIDAR_ANGLE && parsedData.end_angle < MAX_LIDAR_ANGLE){
+		if(parsedData.start_angle >= MIN_LIDAR_ANGLE && parsedData.start_angle <= MAX_LIDAR_ANGLE && parsedData.end_angle >= MIN_LIDAR_ANGLE && parsedData.end_angle <= MAX_LIDAR_ANGLE){
 
-			// Check if all points are in range of floor distance
-			if (points.every(point => point.distance >= FLOOR_DISTANCE - TOLERANCE || point.distance <= FLOOR_DISTANCE + TOLERANCE)) {
-				isDoorOpen = true; // Set door open
+			console.log("distance: " + parsedData.points[6].distance)
+			console.log("saw floor: " + sawFloor)
+			console.log(" ")
 
-			//Check if all points are in range of the door distance 
-			} else if (points.every(point => point.distance >= DOOR_DISTANCE - TOLERANCE || point.distance <= DOOR_DISTANCE + TOLERANCE)) {
-				isDoorOpen = false; // Set door closed
+		
+			//if all points report door distance then door is closed or someone is standing there
+			if (points.every(point => point.distance <= 250)) {
+				console.log("door closed" + closedCount)
+				closedCount++;
 
-			//If the door is open and the middle point is less than the floor distance then we saw something other than the door 
-			} else if (isDoorOpen && points[5].distance < FLOOR_DISTANCE) {
-				print("saw something")
-				//If this is the first time we saw something then we set sawSomething to true
-				if(!sawSomething){
-					sawSomething = true
+				//After 5 consecutive potential door closings set door status to closed.
+				if(closedCount > 5){
+					isDoorOpen = false; 
 				}
-			} else if(isDoorOpen && points[5].distance ==  FLOOR_DISTANCE ){
-				print("saw floor")
-				//If we have seen something and now we see the floor then we saw something move in front of the sensor
-				if(sawSomething){
-					occupancy++
-					sawSomething = false
+
+				//Otherwise something else is in front of the door like a person
+				else{
+					sawFloorCount = 0;
+					//If we have seen the floor before and now we see something else we can assume a person is going through the door
+					if(sawFloor){
+						occupancy++
+						sawFloor = false
+					}
 				}
-			} else{
-				print("nothing") 
-				continue;
+				
+				
+			}
+
+			//case where door is open because we see the floor 
+			else if (points.every(point => point.distance <= 600 && point.distance >= 250)) {
+
+				// Set door open
+				isDoorOpen = true; 
+
+				//Reset the closed count to 0 if all points report the floor
+				closedCount = 0;
+
+				//If all points report the floor set saw floor to true
+				sawFloorCount++;
+				if(sawFloorCount > 5){
+					sawFloor = true;
+					sawFloorCount = 0;
+				}
+				
+			}
+			
+			else{
+				console.log("nothing") //Not sure what would result in the nothing case 
 			}
 		}
 		// Ensure history doesn't exceed the maximum size
@@ -129,9 +157,13 @@ app.get('/api/lidar-data', (req, res) => {
 app.get('/api/door-status', (req, res) => {
 	res.json(isDoorOpen);
 })
+app.get('/api/occupancy', (req, res) => {
+	res.json(occupancy);
+})
 
 // Start the server
 app.listen(port, () => {
 	console.log(`Listening at http://localhost:${port}`);
 });
+
 
