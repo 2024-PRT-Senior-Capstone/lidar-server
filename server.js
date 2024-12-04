@@ -117,6 +117,7 @@ serialPort.on('data', (data) => {
 				if(closedCount > 5){
 					isDoorOpen = false; 
 					if(!didDecrement){
+						didDecrement = true
 						occupancy--
 					}
 				}
