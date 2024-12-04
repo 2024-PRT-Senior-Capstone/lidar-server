@@ -100,6 +100,7 @@ serialPort.on('data', (data) => {
 						isDoorOpen = false;
 					}, 60000); // 1 minute
 			}
+			
 			//Debug statements
 			console.log("distance: " + parsedData.points[6].distance)
 			console.log("saw floor: " + sawFloor)
@@ -114,6 +115,7 @@ serialPort.on('data', (data) => {
 				//After 5 consecutive potential door closings set door status to closed.
 				if(closedCount > 5){
 					isDoorOpen = false; 
+					occupancy--
 				}
 
 				//Otherwise something else is in front of the door like a person
@@ -134,6 +136,7 @@ serialPort.on('data', (data) => {
 
 				// Set door open
 				isDoorOpen = true; 
+				occupancy = 0;
 
 				//Reset the closed count to 0 if all points report the floor
 				closedCount = 0;
