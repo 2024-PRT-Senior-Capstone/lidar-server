@@ -142,6 +142,8 @@ serialPort.on('data', (data) => {
 			//case where door is open because we see the floor 
 			else if (points.every(point => point.distance <= FLOOR_DISTANCE && point.distance >= DOOR_DISTANCE)) {
 
+				console.log("floor distance")
+
 				// Set door open
 				isDoorOpen = true; 
 				didDecrement = false;
