@@ -20,7 +20,7 @@ const MAX_HISTORY_SIZE = 100; // Limit the history size to 100 packets
 const MIN_LIDAR_ANGLE = 170; 
 const MAX_LIDAR_ANGLE = 201;
 const FLOOR_DISTANCE = 600;
-const DOOR_DISTANCE = 250;
+const DOOR_DISTANCE = 215;
 const TOLERANCE = 5;
 
 
@@ -96,13 +96,13 @@ serialPort.on('data', (data) => {
 		
 		if(parsedData.start_angle >= MIN_LIDAR_ANGLE && parsedData.start_angle <= MAX_LIDAR_ANGLE && parsedData.end_angle >= MIN_LIDAR_ANGLE && parsedData.end_angle <= MAX_LIDAR_ANGLE){
 
-			if(isDoorOpen){
-				// Start a timer when the door is open
-					setTimeout(() => {
-						// Assume the door should be closed by now
-						isDoorOpen = false;
-					}, 60000); // 1 minute
-			}
+			// if(isDoorOpen){
+			// 	// Start a timer when the door is open
+			// 		setTimeout(() => {
+			// 			// Assume the door should be closed by now
+			// 			isDoorOpen = false;
+			// 		}, 60000); // 1 minute
+			// }
 			
 			//Debug statements
 			//console.log("distance: " + parsedData.points[6].distance)
@@ -111,19 +111,19 @@ serialPort.on('data', (data) => {
 
 		
 			//if all points report door distance then door is closed or someone is standing there
-			if (points.every(point => point.distance <= 250)) {
+			if (points.every(point => point.distance <= DOOR_DISTANCE)) {
 			
 				closedCount++;
 
 				//After 5 consecutive potential door closings set door status to closed.
-				if(closedCount > cycleToClose){
+				if(closedCount > 50){
 					console.log("door closed" + closedCount)
-					didClose = true;
+					// didClose = true;
 					isDoorOpen = false; 
-					if(!didDecrement){
-						didDecrement = true
-						//occupancy--
-					}
+					// if(!didDecrement){
+					// 	didDecrement = true
+					// 	//occupancy--
+					// }
 				}
 
 				//Otherwise something else is in front of the door like a person
@@ -140,7 +140,7 @@ serialPort.on('data', (data) => {
 			}
 
 			//case where door is open because we see the floor 
-			else if (points.every(point => point.distance <= 600 && point.distance >= 250)) {
+			else if (points.every(point => point.distance <= FLOOR_DISTANCE& point.distance >= DOOR_DISTANCE)) {
 
 				// Set door open
 				isDoorOpen = true; 
@@ -158,10 +158,8 @@ serialPort.on('data', (data) => {
 
 				//After 5 potential full floor reports we can be sure we have seen the floor. 
 				if(sawFloorCount > 5){
-
 					//Set saw floor bool to true
 					sawFloor = true;
-
 					//Reset saw floor count
 					sawFloorCount = 0;
 				}
