@@ -32,6 +32,7 @@ var sawFloor = false;
 var lastPersonAngle = 0;
 var sawFloorCount = 0;
 var timeElapsed = 0;
+var didDecrement = false;
 
 
 serialPort.on('data', (data) => {
@@ -115,7 +116,9 @@ serialPort.on('data', (data) => {
 				//After 5 consecutive potential door closings set door status to closed.
 				if(closedCount > 5){
 					isDoorOpen = false; 
-					occupancy--
+					if(!didDecrement){
+						occupancy--
+					}
 				}
 
 				//Otherwise something else is in front of the door like a person
@@ -137,6 +140,7 @@ serialPort.on('data', (data) => {
 				// Set door open
 				isDoorOpen = true; 
 				occupancy = 0;
+				didDecrement = false;
 
 				//Reset the closed count to 0 if all points report the floor
 				closedCount = 0;
