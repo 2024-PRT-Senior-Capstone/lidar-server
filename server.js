@@ -20,7 +20,7 @@ const MAX_HISTORY_SIZE = 100; // Limit the history size to 100 packets
 const MIN_LIDAR_ANGLE = 170; 
 const MAX_LIDAR_ANGLE = 201;
 const FLOOR_DISTANCE = 600;
-const DOOR_DISTANCE = 215;
+const DOOR_DISTANCE = 250;
 const TOLERANCE = 5;
 
 
