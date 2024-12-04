@@ -34,6 +34,7 @@ var sawFloorCount = 0;
 var timeElapsed = 0;
 var didDecrement = false;
 var didClose = false;
+var cycleToClose = 0;
 
 
 serialPort.on('data', (data) => {
@@ -104,18 +105,19 @@ serialPort.on('data', (data) => {
 			}
 			
 			//Debug statements
-			console.log("distance: " + parsedData.points[6].distance)
-			console.log("saw floor: " + sawFloor)
-			console.log(" ")
+			//console.log("distance: " + parsedData.points[6].distance)
+			//console.log("saw floor: " + sawFloor)
+			//console.log(" ")
 
 		
 			//if all points report door distance then door is closed or someone is standing there
 			if (points.every(point => point.distance <= 250)) {
-				console.log("door closed" + closedCount)
+			
 				closedCount++;
 
 				//After 5 consecutive potential door closings set door status to closed.
-				if(closedCount > 5){
+				if(closedCount > cycleToClose){
+					console.log("door closed" + closedCount)
 					didClose = true;
 					isDoorOpen = false; 
 					if(!didDecrement){
