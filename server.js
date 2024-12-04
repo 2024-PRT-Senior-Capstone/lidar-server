@@ -7,7 +7,7 @@ const port = 3001;
 app.use(cors());
 
 // Serial connection to the LD20 LIDAR on COM3
-const serialPort = new SerialPort({ path: 'COM5', baudRate: 230400 });
+const serialPort = new SerialPort({ path: '/dev/ttyUSB0', baudRate: 230400 });
 
 // Buffer to accumulate incoming data
 let incomingBuffer = Buffer.alloc(0);
