@@ -31,6 +31,7 @@ var closedCount = 0;
 var sawFloor = false;
 var lastPersonAngle = 0;
 var sawFloorCount = 0;
+var timeElapsed = 0;
 
 
 serialPort.on('data', (data) => {
@@ -85,11 +86,20 @@ serialPort.on('data', (data) => {
 			crc8,
 		};
 
+
+
 		// Add parsed packet data to history
 		history.push(parsedData);
 		
 		if(parsedData.start_angle >= MIN_LIDAR_ANGLE && parsedData.start_angle <= MAX_LIDAR_ANGLE && parsedData.end_angle >= MIN_LIDAR_ANGLE && parsedData.end_angle <= MAX_LIDAR_ANGLE){
 
+			if(isDoorOpen){
+				// Start a timer when the door is open
+					setTimeout(() => {
+						// Assume the door should be closed by now
+						isDoorOpen = false;
+					}, 60000); // 1 minute
+			}
 			//Debug statements
 			console.log("distance: " + parsedData.points[6].distance)
 			console.log("saw floor: " + sawFloor)
