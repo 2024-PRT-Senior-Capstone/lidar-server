@@ -118,7 +118,7 @@ serialPort.on('data', (data) => {
 				//After 5 consecutive potential door closings set door status to closed.
 				if(closedCount > 50){
 					console.log("door closed" + closedCount)
-					// didClose = true;
+					didClose = true;
 					isDoorOpen = false; 
 					// if(!didDecrement){
 					// 	didDecrement = true
