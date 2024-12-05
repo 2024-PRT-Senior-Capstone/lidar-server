@@ -18,8 +18,8 @@ const MAX_HISTORY_SIZE = 100; // Limit the history size to 100 packets
 
 //The vars below need to be adjusted based on door angle/distance
 const MIN_LIDAR_ANGLE = 170; 
-const MAX_LIDAR_ANGLE = 201;
-const FLOOR_DISTANCE = 600;
+const MAX_LIDAR_ANGLE = 200;
+const FLOOR_DISTANCE = 500;
 const DOOR_DISTANCE = 250;
 const TOLERANCE = 5;
 
@@ -108,11 +108,13 @@ serialPort.on('data', (data) => {
 			//console.log("distance: " + parsedData.points[6].distance)
 			//console.log("saw floor: " + sawFloor)
 			//console.log(" ")
+			
 
 		
 			//if all points report door distance then door is closed or someone is standing there
 			if (points.every(point => point.distance <= DOOR_DISTANCE)) {
 			
+				
 				closedCount++;
 
 				//After 5 consecutive potential door closings set door status to closed.
@@ -131,6 +133,7 @@ serialPort.on('data', (data) => {
 					sawFloorCount = 0;
 					//If we have seen the floor before and now we see something else we can assume a person is going through the door
 					if(sawFloor){
+						console.log("saw person")
 						occupancy++
 						sawFloor = false
 					}
