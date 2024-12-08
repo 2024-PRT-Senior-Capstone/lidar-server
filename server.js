@@ -7,7 +7,7 @@ const port = 3001;
 app.use(cors());
 
 // Serial connection to the LD20 LIDAR on COM3
-const serialPort = new SerialPort({ path: 'COM5', baudRate: 230400 });
+const serialPort = new SerialPort({ path: '/dev/ttyUSB0', baudRate: 230400 });
 
 // Buffer to accumulate incoming data
 let incomingBuffer = Buffer.alloc(0);
@@ -52,10 +52,9 @@ serialPort.on('data', (data) => {
 	// Loop to process multiple packets in the buffer, if present
 	while (incomingBuffer.length >= 47) {
 
-		if(currentState === states.DOOR_CLOSED_TRIP_END){
+		if(currentState === states.DOOR_OPEN_PASSANGER_ON){
 			console.log("resetting occupancy")
 			occupancy = 0;
-			currentState = states.INITIAL_DOOR_CLOSED
 		}
 
 		// Look for the header byte 0x54 to find the start of a packet
@@ -183,6 +182,10 @@ serialPort.on('data', (data) => {
 				if(currentState === states.DOOR_CLOSE_TRIP_START){
 					currentState = states.DOOR_OPEN_TRIP_END
 					console.log("state change" + currentState)
+				}
+				if(currentState === states.DOOR_CLOSED_TRIP_END){
+					console.log("state change" + currentState)
+					currentState = states.INITIAL_DOOR_CLOSED
 				}
 
 				//console.log("floor distance")
