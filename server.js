@@ -7,7 +7,7 @@ const port = 3001;
 app.use(cors());
 
 // Serial connection to the LD20 LIDAR on COM3
-const serialPort = new SerialPort({ path: 'COM3', baudRate: 230400 });
+const serialPort = new SerialPort({ path: '/dev/ttyUSB0', baudRate: 230400 });
 
 // Buffer to accumulate incoming data
 let incomingBuffer = Buffer.alloc(0);
@@ -16,12 +16,42 @@ let incomingBuffer = Buffer.alloc(0);
 const history = [];
 const MAX_HISTORY_SIZE = 100; // Limit the history size to 100 packets
 
+//The vars below need to be adjusted based on door angle/distance
+const MIN_LIDAR_ANGLE = 170; 
+const MAX_LIDAR_ANGLE = 200;
+const FLOOR_DISTANCE = 500;
+const DOOR_DISTANCE = 250;
+const TOLERANCE = 5;
+
+const states = {
+    UNKNOWN: 0,
+    INITIAL_DOOR_CLOSED: 1,
+	DOOR_OPEN_PASSANGER_ON: 2,
+
+	DOOR_CLOSE_TRIP_START: 3,
+	DOOR_OPEN_TRIP_END: 4,
+
+	DOOR_CLOSED_TRIP_END: 5,
+};
+
+let currentState = states.INITIAL_DOOR_CLOSED
+
+
+var isDoorOpen = false;
+var occupancy = 0;
+var closedCount = 0;
+var sawFloorCount = 0;
+var didClose = false;
+var sawFloor = false;
+
+
 serialPort.on('data', (data) => {
 	// Append new data to buffer
 	incomingBuffer = Buffer.concat([incomingBuffer, data]);
 
 	// Loop to process multiple packets in the buffer, if present
 	while (incomingBuffer.length >= 47) {
+
 		// Look for the header byte 0x54 to find the start of a packet
 		const headerIndex = incomingBuffer.indexOf(0x54);
 
@@ -68,9 +98,120 @@ serialPort.on('data', (data) => {
 			crc8,
 		};
 
+
+
 		// Add parsed packet data to history
 		history.push(parsedData);
+		
+		if(parsedData.start_angle >= MIN_LIDAR_ANGLE && parsedData.start_angle <= MAX_LIDAR_ANGLE && parsedData.end_angle >= MIN_LIDAR_ANGLE && parsedData.end_angle <= MAX_LIDAR_ANGLE){
 
+			
+			// if(isDoorOpen){
+			// 	// Start a timer when the door is open
+			// 		setTimeout(() => {
+			// 			// Assume the door should be closed by now
+			// 			isDoorOpen = false;
+			// 		}, 60000); // 1 minute
+			// }
+			
+			//Debug statements
+			//console.log("distance: " + parsedData.points[6].distance)
+			//console.log("saw floor: " + sawFloor)
+			//console.log(" ")
+			
+
+		
+			//if all points report door distance then door is closed or someone is standing there
+			if (points.every(point => point.distance <= DOOR_DISTANCE)) {
+		
+				closedCount++;
+
+				//After 5 consecutive potential door closings set door status to closed.
+				if(closedCount > 50){
+
+					//If the door is closed 
+
+					//If the door is closed and being switched to open upon arriving at a station
+					if(currentState === states.DOOR_OPEN_PASSANGER_ON){
+						currentState = states.DOOR_CLOSE_TRIP_START
+						console.log("state change" + currentState)
+					}
+					if(currentState === states.DOOR_OPEN_TRIP_END){
+						currentState = states.DOOR_CLOSED_TRIP_END
+					}
+					
+
+
+					// console.log("door closed" + closedCount)
+					didClose = true;
+					isDoorOpen = false; 
+					// if(!didDecrement){
+					// 	didDecrement = true
+					// 	//occupancy--
+					// }
+				}
+
+				//Otherwise something else is in front of the door like a person
+				else{
+					sawFloorCount = 0;
+					//If we have seen the floor before and now we see something else we can assume a person is going through the door
+					if(sawFloor){
+						console.log("saw person")
+						occupancy++
+						sawFloor = false
+					}
+				}
+				
+				
+			}
+
+			//case where door is open because we see the floor 
+			else if (points.every(point => point.distance <= FLOOR_DISTANCE && point.distance >= DOOR_DISTANCE)) {
+				
+
+				//if the door is closed and being switching to open upon arriving at a station
+				if(currentState === states.INITIAL_DOOR_CLOSED){
+					currentState = states.DOOR_OPEN_PASSANGER_ON
+					console.log("resetting occupancy")
+					occupancy = 0;
+					console.log("state change" + currentState)
+				}
+				if(currentState === states.DOOR_CLOSE_TRIP_START){
+					currentState = states.DOOR_OPEN_TRIP_END
+					console.log("state change" + currentState)
+				}
+				if(currentState === states.DOOR_CLOSED_TRIP_END){
+					console.log("state change" + currentState)
+					currentState = states.INITIAL_DOOR_CLOSED
+				}
+
+				//console.log("floor distance")
+
+				// Set door open
+				isDoorOpen = true; 
+				
+				didDecrement = false;
+
+				//Reset the closed count to 0 if all points report the floor
+				closedCount = 0;
+
+				//If all points report the floor set saw floor to true
+				sawFloorCount++;
+
+				//After 5 potential full floor reports we can be sure we have seen the floor. 
+				if(sawFloorCount > 5){
+					//Set saw floor bool to true
+					sawFloor = true;
+					//Reset saw floor count
+					sawFloorCount = 0;
+				}
+				
+			}
+			
+			else{
+				//console.log("nothing") //Not sure what would result in the nothing case 
+			}
+		}
 		// Ensure history doesn't exceed the maximum size
 		if (history.length > MAX_HISTORY_SIZE) {
 			history.shift(); // Remove the oldest packet when limit is exceeded
@@ -86,7 +227,23 @@ app.get('/api/lidar-data', (req, res) => {
 	res.json(history);
 });
 
+//Endpoint to serve door status
+app.get('/api/door-status', (req, res) => {
+	res.json(isDoorOpen);
+})
+
+//Endpoint to serve occupancy
+app.get('/api/occupancy', (req, res) => {
+	res.json(occupancy);
+})
+
+app.post('/api/occupancy-clear', (req, res) => {
+	occupancy = 0;
+})
+
 // Start the server
 app.listen(port, () => {
 	console.log(`Listening at http://localhost:${port}`);
 });
+
+
