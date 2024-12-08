@@ -126,6 +126,10 @@ serialPort.on('data', (data) => {
 					// 	didDecrement = true
 					// 	//occupancy--
 					// }
+					if(didClose){
+						occupancy = 0;
+						didClose = false;
+					}
 				}
 
 				//Otherwise something else is in front of the door like a person
@@ -152,10 +156,6 @@ serialPort.on('data', (data) => {
 				didDecrement = false;
 
 				//Reset the closed count to 0 if all points report the floor
-				if(didClose){
-					occupancy = 0;
-					didClose = true;
-				}
 				closedCount = 0;
 
 				//If all points report the floor set saw floor to true
