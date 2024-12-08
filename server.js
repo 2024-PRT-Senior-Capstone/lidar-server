@@ -237,6 +237,10 @@ app.get('/api/occupancy', (req, res) => {
 	res.json(occupancy);
 })
 
+app.post('/api/occupancy-clear', (req, res) => {
+	occupancy = 0;
+})
+
 // Start the server
 app.listen(port, () => {
 	console.log(`Listening at http://localhost:${port}`);
