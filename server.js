@@ -52,11 +52,6 @@ serialPort.on('data', (data) => {
 	// Loop to process multiple packets in the buffer, if present
 	while (incomingBuffer.length >= 47) {
 
-		if(currentState === states.DOOR_OPEN_PASSANGER_ON){
-			console.log("resetting occupancy")
-			occupancy = 0;
-		}
-
 		// Look for the header byte 0x54 to find the start of a packet
 		const headerIndex = incomingBuffer.indexOf(0x54);
 
@@ -177,6 +172,8 @@ serialPort.on('data', (data) => {
 				//if the door is closed and being switching to open upon arriving at a station
 				if(currentState === states.INITIAL_DOOR_CLOSED){
 					currentState = states.DOOR_OPEN_PASSANGER_ON
+					console.log("resetting occupancy")
+					occupancy = 0;
 					console.log("state change" + currentState)
 				}
 				if(currentState === states.DOOR_CLOSE_TRIP_START){
